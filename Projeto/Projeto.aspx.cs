@@ -47,17 +47,21 @@ namespace Projeto
             string nome = txtNome.Text;
             string endereco = txtEndereco.Text;
             string email = txtEmail.Text;
+            string clogin = txtCLogin.Text;
+            string csenha = txtCSenha.Text;
 
             string constr = ConfigurationManager.ConnectionStrings["constr"].ConnectionString;
             using (MySqlConnection con = new MySqlConnection(constr))
             {
-                using (MySqlCommand cmd = new MySqlCommand("INSERT INTO usuario (nm_nome, nm_endereco, nm_email) VALUES (@Nome, @Endereco, @Email)"))
+                using (MySqlCommand cmd = new MySqlCommand("INSERT INTO usuario (nm_nome, nm_endereco, nm_email, nm_login, nm_senha) VALUES (@Nome, @Endereco, @Email, @Login, @Senha)"))
                 {
                     using (MySqlDataAdapter sda = new MySqlDataAdapter())
                     {
                         cmd.Parameters.AddWithValue("@Nome", nome);
                         cmd.Parameters.AddWithValue("@Endereco", endereco);
                         cmd.Parameters.AddWithValue("@Email", email);
+                        cmd.Parameters.AddWithValue("@Login", clogin);
+                        cmd.Parameters.AddWithValue("@Senha", csenha);
                         cmd.Connection = con;
                         con.Open();
                         cmd.ExecuteNonQuery();
@@ -87,16 +91,20 @@ namespace Projeto
             string nome = (row.FindControl("txtNome") as TextBox).Text;
             string endereco = (row.FindControl("txtEndereco") as TextBox).Text;
             string email = (row.FindControl("txtEmail") as TextBox).Text;
+            string login = (row.FindControl("txtLogin") as TextBox).Text;
+            string senha = (row.FindControl("txtSenha") as TextBox).Text;
             string constr = ConfigurationManager.ConnectionStrings["constr"].ConnectionString;
             using (MySqlConnection con = new MySqlConnection(constr))
             {
-                using (MySqlCommand cmd = new MySqlCommand("UPDATE usuario SET nm_nome = @Nome, nm_endereco = @Endereco, nm_email = @Email WHERE cd_id = @Id"))
+                using (MySqlCommand cmd = new MySqlCommand("UPDATE usuario SET nm_nome = @Nome, nm_endereco = @Endereco, nm_email = @Email, nm_login = @Login, nm_senha = @Senha WHERE cd_id = @Id"))
                 {
                     using (MySqlDataAdapter sda = new MySqlDataAdapter())
                     {
                         cmd.Parameters.AddWithValue("@Nome", nome);
                         cmd.Parameters.AddWithValue("@Endereco", endereco);
                         cmd.Parameters.AddWithValue("@Email", email);
+                        cmd.Parameters.AddWithValue("@Login", login);
+                        cmd.Parameters.AddWithValue("@Senha", senha);
                         cmd.Parameters.AddWithValue("@id", id);
                         cmd.Connection = con;
                         con.Open();
@@ -128,6 +136,78 @@ namespace Projeto
                 }
             }
             this.BindGrid();
+        }
+
+        protected void Procurar(object sender, EventArgs e)
+        {
+            var procurar = txtProcurar.Text;
+            string constr = ConfigurationManager.ConnectionStrings["constr"].ConnectionString;
+            using (MySqlConnection con = new MySqlConnection(constr))
+            {
+                using (MySqlCommand cmd = new MySqlCommand("SELECT * FROM usuario WHERE nm_nome = @Procurar"))
+                {
+                    using (MySqlDataAdapter sda = new MySqlDataAdapter())
+                    {
+                        cmd.Parameters.AddWithValue("@Procurar", procurar);
+                        cmd.Connection = con;
+                        sda.SelectCommand = cmd;
+                        using (DataTable dt = new DataTable())
+                        {
+                            sda.Fill(dt);
+                            GridView1.DataSource = dt;
+                            GridView1.DataBind();
+                        }
+                    }
+                }
+            }
+        }
+
+        protected void Logar(object sender, EventArgs e)
+        {
+            Label lblStatus = (Label)form1.FindControl("txtStatus");
+            var login = txtLogin.Text;
+            var senha = txtSenha.Text;
+            string constr = ConfigurationManager.ConnectionStrings["constr"].ConnectionString;
+
+            using (MySqlConnection con = new MySqlConnection(constr))
+            {
+                using (MySqlCommand cmd = new MySqlCommand("SELECT nm_nome, nm_senha, nm_login FROM usuario WHERE nm_login = @Login"))
+                {
+                    using (MySqlDataAdapter sda = new MySqlDataAdapter())
+                    {
+                        cmd.Parameters.AddWithValue("@Senha", senha);
+                        cmd.Parameters.AddWithValue("@Login", login);
+                        cmd.Connection = con;
+                        sda.SelectCommand = cmd;
+
+                        using (DataTable dt = new DataTable())
+                        {
+                            sda.Fill(dt);
+
+                            if(dt.Rows.Count > 0) { 
+
+                            foreach (DataRow row in dt.Rows)
+                            {
+                                if (senha.Equals(row["nm_senha"].ToString()) && login.Equals(row["nm_login"].ToString()))
+                                {
+                                    Session["Nome"] = row["nm_nome"];
+                                        lblStatus.Text = "Logado, Bem vindo " + Session["Nome"].ToString();                                        
+                                }
+                                else
+                                {
+                                    lblStatus.Text = "Login ou senha invalidos";
+                                }
+                            }
+                            }
+                            else
+                            {
+                                lblStatus.Text = "Usuario inexsistente";
+                            }
+                        }
+
+                    }
+                }
+            }
         }
     }
 }
